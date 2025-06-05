@@ -1,125 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Sketchfab AR - Phoenix Bird</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100%;
-      background: transparent;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Floating Sketchfab AR (MindAR No Tracking)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
-    #camera {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: 0;
-    }
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image-aframe.prod.js"></script>
 
-    #viewer-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      touch-action: none;
-      overflow: hidden;
-      z-index: 1;
-    }
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+      }
 
-    #iframe-wrapper {
-      width: 100%;
-      height: 100%;
-      transform-origin: center center;
-      will-change: transform;
-    }
+      .zoom-frame {
+        width: 1024px;
+        height: 768px;
+        border: none;
+        background: transparent;
+        transform: scale(0.003); /* match A-Frame world size */
+        transform-origin: top left;
+      }
+    </style>
+  </head>
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: transparent;
-    }
-  </style>
-</head>
-<body>
-  <!-- Camera Background -->
-  <video id="camera" autoplay muted playsinline></video>
+  <body>
+    <a-scene
+      embedded
+      mindar-image="imageTargetSrc: undefined; autoStart: true; uiScanning: false;"
+      color-space="sRGB"
+      renderer="precision: mediump; antialias: true;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: true"
+    >
+      <a-assets></a-assets>
 
-  <!-- Sketchfab Viewer -->
-  <div id="viewer-container">
-    <div id="iframe-wrapper">
+      <!-- Static camera -->
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- Floating entity (not linked to marker) -->
+      <a-entity position="0 0 -2"> <!-- 2 meters in front of the camera -->
+        <a-plane
+          width="1.5"
+          height="1"
+          material="shader: html; target: #sketchfabFrame;"
+        ></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <!-- Hidden iframe texture -->
+    <div style="display: none;">
       <iframe
-        title="phoenix bird"
-        allowfullscreen
-        mozallowfullscreen="true"
-        webkitallowfullscreen="true"
+        id="sketchfabFrame"
+        class="zoom-frame"
+        src="https://sketchfab.com/models/844ba0cf144a413ea92c779f18912042/embed?autostart=1&transparent=1"
         allow="autoplay; fullscreen; xr-spatial-tracking"
-        xr-spatial-tracking
-        execution-while-out-of-viewport
-        execution-while-not-rendered
-        web-share
-        src="https://sketchfab.com/models/844ba0cf144a413ea92c779f18912042/embed?autostart=1&transparent=1">
-      </iframe>
+        allowfullscreen
+      ></iframe>
     </div>
-  </div>
-
-  <!-- Touch Gestures with Hammer.js -->
-  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-  <script>
-    // Camera stream
-    const video = document.getElementById('camera');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        console.error("Camera access denied:", err);
-      });
-
-    // Pinch/Zoom/Pan logic
-    const wrapper = document.getElementById('iframe-wrapper');
-    let scale = 1;
-    let lastScale = 1;
-    let posX = 0;
-    let posY = 0;
-    let lastPosX = 0;
-    let lastPosY = 0;
-
-    const hammer = new Hammer.Manager(wrapper);
-    hammer.add(new Hammer.Pan({ threshold: 0, pointers: 0 }));
-    hammer.add(new Hammer.Pinch({ threshold: 0 })).recognizeWith(hammer.get('pan'));
-
-    hammer.on("panmove", (ev) => {
-      posX = lastPosX + ev.deltaX;
-      posY = lastPosY + ev.deltaY;
-      updateTransform();
-    });
-
-    hammer.on("panend", () => {
-      lastPosX = posX;
-      lastPosY = posY;
-    });
-
-    hammer.on("pinchmove", (ev) => {
-      scale = Math.max(0.5, Math.min(3, lastScale * ev.scale));
-      updateTransform();
-    });
-
-    hammer.on("pinchend", () => {
-      lastScale = scale;
-    });
-
-    function updateTransform() {
-      wrapper.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-    }
-  </script>
-</body>
+  </body>
 </html>
